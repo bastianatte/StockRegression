@@ -1,5 +1,10 @@
 
 
+classes/__pycache__/
+classes/__pycache__/models.cpython-36.pyc
+classes/__pycache__/plotter.cpython-36.pyc
+utils/__pycache__/misc.cpython-36.pyc
+utils/__pycache__/plots.cpython-36.pyc
 .venv/
 data/
 output/
