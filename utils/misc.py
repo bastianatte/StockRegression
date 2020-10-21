@@ -1,6 +1,9 @@
 import pandas as pd
+import numpy as np
 import logging
 import json
+from sklearn.model_selection import TimeSeriesSplit
+import sklearn
 
 
 def load_config(path):
@@ -28,43 +31,49 @@ def get_logger(name):
 utils_log = get_logger(__name__)
 utils_log.setLevel(logging.INFO)
 
-def load_data(input_csv):
-    """
-    Creating dataset from multiple csv file in a folder
-    """
-    import numpy
-    # dataset = pd.read_csv(input_csv,  parse_dates=['Date'], index_col='Date')
-    dataset = pd.read_csv(input_csv)
-    header = dataset.columns
-    features = dataset.loc[:, dataset.columns].values
-    print("feat type: ", type(features))
-    utils_log.info("dataset headers: \n {}".format( header ))
-    utils_log.info("Dataset head: \n {}".format(dataset.head))
-    utils_log.info("features shape : {}".format(features.shape))
-    return features, dataset
 
 def load_single_csv(input_csv):
     """
     Creating df from single csv in a folder.
     """
+    utils_log.info("in load single csv")
     df = pd.read_csv(input_csv)
-    df_mod = df[['Date','Open',"Close"]]
-    df_mod.sort_values('Date', inplace=True)
+    # df_mod = df[["Date", "Open", "Close"]]
+    df_mod = df.loc[:, ('Date', 'Close', 'Open')]
+    # df_mod.sort_values('Date', inplace=True)
+    df_mod.sort_values('Date')
     df_mod.set_index('Date', inplace=True)        
-    utils_log.info("df before: \n {}".format(df_mod))
-    df_mod['Clop'] = df_mod['Close'] - df_mod['Open']
-    df_mod['Clop_norm'] = df_mod['Clop']/df_mod['Open']
-    print("#####################")
-    print(df_mod)
-    print("#####################")
-    #####################
+    # utils_log.info("df before: \n {}".format(df_mod))
+    df_mod.loc[:,'Clop_norm'] = (df_mod.loc[:, 'Close'].subtract(df_mod.loc[:, 'Open'])).div(df_mod.loc[:, 'Open'])
+    # utils_log.info("Dataset before applying lags: \n {}".format(df_mod.head()))
+    df_mod.loc[:, 'Clop_norm'] = df_mod.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
+    # utils_log.info("Dataset after applying lags: \n {}".format(df_mod.head()))
     days = 250
-    train = df_mod.iloc[:-days,3:4].copy()
-    test = df_mod.iloc[-days:,3:4].copy()
-    utils_log.info("train shape is {} and test shape is {}".format(
-        train.shape, test.shape
+    train = df_mod.iloc[:-days].copy()
+    test = df_mod.iloc[-days:].copy()
+    # # print(df_mod.head())
+    # X_train = train.drop('Clop_norm', axis=1)
+    X_train = train.loc[:, ('Close', 'Open')]
+    # utils_log.info("X train head: \n {}".format(X_train.head()))
+    y_train = train.loc[:, 'Clop_norm']
+    # X_test = test.drop('Clop_norm', axis=1)
+    X_test = test.loc[:, ('Close', 'Open')]
+    # utils_log.info("X test head: \n {}".format(X_test.head()))
+    y_test = test.loc[:, 'Clop_norm']
+    utils_log.info("shapes are: {}, {}, {}, {}".format(
+        X_train.shape, y_train.shape, X_test.shape, y_test.shape
         ))
-    utils_log.info("Train df: {} \n Test df: {}".format(train.head, test.head))
-    return df_mod, train, test
+    return df_mod, train, test, X_train, y_train, X_test, y_test
 
 
+def calculate_sign(y_test, pred):
+    good = 0 
+    bad = 0
+    for i, j in zip( range(len(y_test)), range(len(pred))):
+        # print(y_test[i], pred[j])
+        if np.sign(y_test[i]) == np.sign(pred[j]):
+            good += 1
+        else:
+            bad += 1 
+    print( "same sign:",(good/(good + bad))*100,"%, opposite sign: ", (bad/(good +bad))*100,"%")
+    return (good/(good + bad))*100, (bad/(good + bad))*100
