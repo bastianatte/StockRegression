@@ -1,13 +1,16 @@
 import argparse
+import fnmatch
 import sys
 import logging
 import numpy
 import os
 from classes.models import models
 from classes.plotter import plotter
-from utils.plots import check_stationarity
+from utils.plots import (
+    linear_regression_plot, linear_regression_scatter, plot_sign
+    )
 from utils.misc import (
-    get_logger, load_config, load_data, load_single_csv
+    get_logger, load_config, load_single_csv, calculate_sign
 )
 
 
@@ -24,30 +27,46 @@ parser.add_argument('-o', '--output', type=str, metavar='', required=True,
 args = parser.parse_args()
 logger = get_logger(__name__)
 logger.setLevel(logging.DEBUG)
-try:
-    CONF = load_config(args.conf)
-    MAIN = CONF.get("main")
-except Exception as e:
-    logger.error("{}. could not get conf settings".format(e.args[0]))
-    sys.exit(1)
 logger.info("Reading settings")
 OUPUT_PATH = args.output
-PLOT_DIR = os.path.join(OUPUT_PATH, "Plots")
-if not os.path.exists(PLOT_DIR):
-    os.makedirs(PLOT_DIR)
 
-######### reading dataset #########
-# feat, df_full = load_data(args.input)
-df, df_train, df_test= load_single_csv(args.input)
+i = 0
+for csv_file in os.listdir(args.input):
+    if fnmatch.fnmatch(csv_file, '*.csv'):
+    	i += 1
+    	if i == 20:
+    		break
+    	else:
+    		logger.info("##################")
+    		path =str(args.input)
+	    	logger.info("{}! Reading {} file ".format(i, csv_file))
+	    	logger.info("Joining path({}) and csv({})".format(path, csv_file))
+	    	csv = os.path.join(path, csv_file)
+	    	logger.info("csv: {}".format(csv))
+	    	csv_folder_string = str(csv_file.strip(".csv"))
+	    	CSV_DIR = os.path.join(OUPUT_PATH, csv_folder_string)
+	    	if not os.path.exists(CSV_DIR):
+	    		os.makedirs(CSV_DIR)
+	    	logger.info("csv dir: {}".format(CSV_DIR))
 
-######### plot dataframe ##########
-plotter = plotter(df, df_train, df_test, PLOT_DIR)
-plotter.plot_clop()
-plotter.plot_clop_norm()
-plotter.plot_close_open()
-plotter.plot_train_test()
-plotter.check_stationarity()
-######## models ##############
-mod = models(df_train, df_test, PLOT_DIR)
-# mod.arima_test()
-mod.linear_regression()
+	    	# loading single csv ###
+	    	df, train, test, X_train, y_train, X_test, y_test = load_single_csv(csv)
+
+	    	## plot ##
+	    	globals()[csv_folder_string] = plotter(df, train, test, CSV_DIR)
+	    	globals()[csv_folder_string].plot_train_test()
+	    	globals()[csv_folder_string].plot_close_open()
+
+	    	# loading models ###
+	    	globals()[csv_folder_string] = models(train, test,
+	    		X_train, y_train,
+	    		X_test, y_test,
+	    		CSV_DIR)
+
+	    	# ### linear regression model ###
+	    	lm, next_day_return = globals()[csv_folder_string].linear_regression()
+	    	print(next_day_return[:3], y_test[:3])
+	    	linear_regression_plot(y_test, next_day_return, CSV_DIR)
+	    	# plot_sign(y_test, train_pred, CSV_DIR)
+
+
