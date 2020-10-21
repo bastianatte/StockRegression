@@ -38,27 +38,22 @@ def load_single_csv(input_csv):
     """
     utils_log.info("in load single csv")
     df = pd.read_csv(input_csv)
-    # df_mod = df[["Date", "Open", "Close"]]
     df_mod = df.loc[:, ('Date', 'Close', 'Open')]
-    # df_mod.sort_values('Date', inplace=True)
     df_mod.sort_values('Date')
     df_mod.set_index('Date', inplace=True)        
-    # utils_log.info("df before: \n {}".format(df_mod))
     df_mod.loc[:,'Clop_norm'] = (df_mod.loc[:, 'Close'].subtract(df_mod.loc[:, 'Open'])).div(df_mod.loc[:, 'Open'])
     # utils_log.info("Dataset before applying lags: \n {}".format(df_mod.head()))
-    df_mod.loc[:, 'Clop_norm'] = df_mod.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
+    # df_mod.loc[:, 'Clop_norm'] = df_mod.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
     # utils_log.info("Dataset after applying lags: \n {}".format(df_mod.head()))
     days = 250
     train = df_mod.iloc[:-days].copy()
     test = df_mod.iloc[-days:].copy()
-    # # print(df_mod.head())
-    # X_train = train.drop('Clop_norm', axis=1)
     X_train = train.loc[:, ('Close', 'Open')]
-    # utils_log.info("X train head: \n {}".format(X_train.head()))
-    y_train = train.loc[:, 'Clop_norm']
-    # X_test = test.drop('Clop_norm', axis=1)
+    utils_log.info("Before shift, Y_train: \n {}".format(train.loc[:, 'Clop_norm'].head()))
+    y_train = train.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
+    # y_train.loc[:, 'Clop_norm'] = y_train.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
+    utils_log.info("After shift, Y_train: \n {}".format(y_train.head()))
     X_test = test.loc[:, ('Close', 'Open')]
-    # utils_log.info("X test head: \n {}".format(X_test.head()))
     y_test = test.loc[:, 'Clop_norm']
     utils_log.info("shapes are: {}, {}, {}, {}".format(
         X_train.shape, y_train.shape, X_test.shape, y_test.shape
@@ -70,7 +65,6 @@ def calculate_sign(y_test, pred):
     good = 0 
     bad = 0
     for i, j in zip( range(len(y_test)), range(len(pred))):
-        # print(y_test[i], pred[j])
         if np.sign(y_test[i]) == np.sign(pred[j]):
             good += 1
         else:
