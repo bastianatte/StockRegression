@@ -1,7 +1,11 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+from utils.misc import get_logger
+import logging
 import os
 
+plotter_log = get_logger(__name__)
+plotter_log.setLevel(logging.INFO)
 
 class plotter(object):
     def __init__(self, dataframe, train, test, out_path):
@@ -31,7 +35,7 @@ class plotter(object):
         y = self.dataframe.Clop_norm
         y = pd.Series(y)
         fig = plt.figure()
-        y.plot(figsize=(22,8), color='teal')
+        y.plot(figsize=(18,5), color='teal')
         plt.title('\u0394 rel')
         figname = os.path.join(self.out_path, "deltarel" + ".png")
         plt.savefig(figname, dpi=200)
@@ -41,6 +45,7 @@ class plotter(object):
         """
         Plot Close and Open variables
         """
+        plotter_log.info("in plot close open")
         dfopen = self.dataframe.Open
         dfclose = self.dataframe.Close
         dfopen = pd.Series(dfopen)
@@ -58,13 +63,16 @@ class plotter(object):
         """
         Plot train and test
         """
+        plotter_log.info("in plot train test")
         plt.figure(figsize=(18,5))
-        plt.title('"relative delta per day')
-        plt.plot(self.train, color='teal')
-        plt.plot(self.test, color='orangered')
+        plt.title('Relative delta per day')
+        # plt.plot(self.train["Clop_norm"], color='teal')
+        # plt.plot(self.test["Clop_norm"], color='orangered')
+        plt.plot(self.train.Clop_norm, color='teal')
+        plt.plot(self.test.Clop_norm, color='orangered')
         plt.legend(['Train','Test'])
         plt.xlabel('Date')
-        plt.ylabel('Close - Open')
+        plt.ylabel('\u0394 rel')
         figname = os.path.join(self.out_path, "train_test_deltarel" + ".png")
         plt.savefig(figname, dpi=200)
         plt.close()
