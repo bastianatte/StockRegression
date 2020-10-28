@@ -35,14 +35,6 @@ class models(object):
         figname = os.path.join(self.out_path, "ARIMA"+".png")
         plt.savefig(figname, dpi=200)
         plt.close()
-        good = 0 
-        bad = 0
-        for i, j in zip(range(len(pred)), range(len(train))):
-            if pred[i] == train[j]:
-                good += 1
-            else:
-                bad += 1 
-        print( "same sign:",(good/(good + bad))*100,"%, opposite sign: ", (bad/(good +bad))*100,"%")
 
 
     def linear_regression(self):
@@ -50,19 +42,19 @@ class models(object):
         from sklearn import linear_model
         model = linear_model.LinearRegression().fit(self.X_train, self.y_train)
         train_pred = model.predict(self.X_test)
-        # fut_pred = model.predict()
-        # print(fut_pred[:5])
         rms=np.sqrt(np.mean(np.power((np.array(self.y_test)-np.array(train_pred)),2)))
         err = mean_squared_error(self.y_test, train_pred)
         model_log.info("RMS: {}, RMSE: {}".format(rms, err))
-        good = 0 
-        bad = 0 
-        for i, j in zip(range(len(self.y_test)), range(len(train_pred))):
-            if np.sign(self.y_test[i]) == np.sign(train_pred[j]):
-                good +=1 
-            else:
-                bad +=1
-        good_per = (good/(good + bad))*100
-        bad_per = (bad/(good +bad))*100
-        model_log.info("SS: {}, OS: {}".format(good_per, bad_per))
+        return model, train_pred
+
+    def random_forest(self):
+        from sklearn.metrics import mean_squared_error
+        from sklearn.ensemble import RandomForestRegressor
+        # model = RandomForestRegressor(max_depth=2, random_state=0)
+        model = RandomForestRegressor()
+        model.fit(self.X_train, self.y_train)
+        train_pred = model.predict(self.X_test)
+        rms=np.sqrt(np.mean(np.power((np.array(self.y_test)-np.array(train_pred)),2)))
+        err = mean_squared_error(self.y_test, train_pred)
+        model_log.info("RMS: {}, RMSE: {}".format(rms, err))
         return model, train_pred
