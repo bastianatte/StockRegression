@@ -32,34 +32,49 @@ utils_log = get_logger(__name__)
 utils_log.setLevel(logging.INFO)
 
 
-def load_single_csv(input_csv):
+def load_single_csv(input_csv, test_days):
     """
     Creating df from single csv in a folder.
     """
     utils_log.info("in load single csv")
     df = pd.read_csv(input_csv)
-    df_mod = df.loc[:, ('Date', 'Close', 'Open')]
+    df_mod = df.loc[:, ('Date', 'Close', 'Open', 'Volume','High', 'Low')]
     df_mod.sort_values('Date')
-    df_mod.set_index('Date', inplace=True)        
-    df_mod.loc[:,'Clop_norm'] = (df_mod.loc[:, 'Close'].subtract(df_mod.loc[:, 'Open'])).div(df_mod.loc[:, 'Open'])
-    # utils_log.info("Dataset before applying lags: \n {}".format(df_mod.head()))
-    # df_mod.loc[:, 'Clop_norm'] = df_mod.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
-    # utils_log.info("Dataset after applying lags: \n {}".format(df_mod.head()))
-    days = 250
-    train = df_mod.iloc[:-days].copy()
-    test = df_mod.iloc[-days:].copy()
+    df_mod.set_index('Date', inplace=True)
+    df_mod.loc[:,'Clop_norm'] = (
+        df_mod.loc[:, 'Close'].subtract(df_mod.loc[:, 'Open'])).div(df_mod.loc[:, 'Open']
+        )
+    utils_log.info("before nan: {}".format(df_mod.shape))
+    df_mod.dropna(inplace=True)
+    utils_log.info("after nan: {}".format(df_mod.shape))
+    train = df_mod.iloc[:-test_days].copy()
+    test = df_mod.iloc[-test_days:].copy()
+    return df_mod, train, test
+
+def split_df(train, test):
+    """
+    Splitting train and test dataframes in X and y.
+    """
+    # X_train = train.loc[:, ('Close', 'Open', 'Volume', 'High', 'Low')]
     X_train = train.loc[:, ('Close', 'Open')]
-    utils_log.info("Before shift, Y_train: \n {}".format(train.loc[:, 'Clop_norm'].head()))
     y_train = train.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
-    # y_train.loc[:, 'Clop_norm'] = y_train.loc[:, 'Clop_norm'].shift(periods=1, fill_value=0)
-    utils_log.info("After shift, Y_train: \n {}".format(y_train.head()))
+    # X_test = test.loc[:, ('Close', 'Open', 'Volume', 'High', 'Low')]
     X_test = test.loc[:, ('Close', 'Open')]
     y_test = test.loc[:, 'Clop_norm']
     utils_log.info("shapes are: {}, {}, {}, {}".format(
         X_train.shape, y_train.shape, X_test.shape, y_test.shape
         ))
-    return df_mod, train, test, X_train, y_train, X_test, y_test
+    return X_train, y_train, X_test, y_test
 
+def building_df(y_test, next_day_return, str_stoke):
+    ndr = pd.Series(next_day_return, index=y_test.index, name='next_day_rt')
+    # print(ndr)
+    stokes_name = pd.Series(str_stoke, index=y_test.index, name='stoke_name')
+    result = pd.concat([y_test, ndr, stokes_name], axis=1, sort=False)
+    result.reset_index(inplace=True)
+    utils_log.info("df columns are: {}".format(result.columns))
+    # print(result)
+    return result
 
 def calculate_sign(y_test, pred):
     good = 0 
@@ -69,5 +84,18 @@ def calculate_sign(y_test, pred):
             good += 1
         else:
             bad += 1 
-    print( "same sign:",(good/(good + bad))*100,"%, opposite sign: ", (bad/(good +bad))*100,"%")
-    return (good/(good + bad))*100, (bad/(good + bad))*100
+    good_per = (good/(good + bad))*100
+    bad_per = (bad/(good +bad))*100
+    utils_log.info("same sign: {}%, opposite sign: {}%".format(good_per, bad_per))
+    return good_per, bad_per
+
+def arith_mean(list, string):
+    val_sum=0
+    idx = 0 
+    val = 0
+    for idx, val in enumerate(list):
+        val_sum += val
+        # utils_log.info("index is: {}, and {} values are: {}".format(idx, string, val))
+    am = val_sum/(idx+1)
+    utils_log.info("Arith mean {} list is: {}%".format(string, am))
+
