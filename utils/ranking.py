@@ -1,6 +1,6 @@
 def long_short_rank(series):
 	import pandas as pd
-	series = series.sort_values(['Date', 'next_day_rt'], ascending=[True, True])
+	series = series.sort_values(['Date', 'next_day_rt'], ascending=[True, False])
 	date_list = list(series.Date.unique())
 	date_list.sort()
 	k = 10
