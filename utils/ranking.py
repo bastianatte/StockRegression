@@ -38,3 +38,8 @@ def long_short_rank(series):
 		print("LONG PART: \n",long_part_next)
 		print("SHORT PART: \n", short_part_next)
 		print("##############")
+
+
+		returns_no_transaction_cost = pd.DataFrame(columns=['Returns'], 
+			data=long_short_profit_nocost.values(), 
+			index=long_short_profit_nocost.keys())
