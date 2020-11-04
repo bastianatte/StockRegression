@@ -66,11 +66,11 @@ def split_df(train, test):
         ))
     return X_train, y_train, X_test, y_test
 
-def building_df(y_test, next_day_return, str_stoke):
+def building_df(y_test, next_day_return, str_stock):
     ndr = pd.Series(next_day_return, index=y_test.index, name='next_day_rt')
     # print(ndr)
-    stokes_name = pd.Series(str_stoke, index=y_test.index, name='stoke_name')
-    result = pd.concat([y_test, ndr, stokes_name], axis=1, sort=False)
+    stocks_name = pd.Series(str_stock, index=y_test.index, name='ticker')
+    result = pd.concat([y_test, ndr, stocks_name], axis=1, sort=False)
     result.reset_index(inplace=True)
     utils_log.info("df columns are: {}".format(result.columns))
     # print(result)

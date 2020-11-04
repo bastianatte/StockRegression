@@ -24,7 +24,7 @@ def long_short_rank(series, path):
 	date_list.sort()
 	for date in date_list[:-1]:
 		data_date = series[series.Date == date]
-		data_date = data_date.drop_duplicates(subset=['stoke_name'])
+		data_date = data_date.drop_duplicates(subset=['ticker'])
 		long_part = data_date.iloc[:k]
 		short_part = data_date.iloc[-k:]
 		long_df = long_part
@@ -63,7 +63,6 @@ def creating_ranking_csv(long_short_profit_nocost, long_part_next_df, short_part
 		index=long_short_profit_nocost.keys()
 		)
 	returns_no_transaction_cost.index.name = 'Date'
-	print(returns_no_transaction_cost)
 	returns_no_transaction_cost = returns_no_transaction_cost[returns_no_transaction_cost!=0]
 	returns_no_transaction_cost = returns_no_transaction_cost.dropna()
 	# print(returns_no_transaction_cost)
