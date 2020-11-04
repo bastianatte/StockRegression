@@ -14,7 +14,7 @@ from utils.misc import (
     get_logger, load_config, load_single_csv, calculate_sign, arith_mean, split_df,
     building_df
 )
-from utils.ranking import long_short_rank
+from utils.ranking import long_short_rank, creating_ranking_csv, plot_cumulative
 
 
 parser = argparse.ArgumentParser(description=("Load flaf to run StockRegression"))
@@ -32,6 +32,11 @@ logger = get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.info("Reading settings")
 OUPUT_PATH = args.output
+if not os.path.exists(OUPUT_PATH):
+	os.makedirs(OUPUT_PATH)
+MAIN_DIR = os.path.join(OUPUT_PATH, "Stocks")
+if not os.path.exists(MAIN_DIR):
+	os.makedirs(MAIN_DIR)
 
 i = 0
 lr_ss_list = []
@@ -44,7 +49,7 @@ bad_df_shape_list = []
 for csv_file in os.listdir(args.input):
     if fnmatch.fnmatch(csv_file, '*.csv'):
     	i += 1
-    	if i == 20:
+    	if i == -1:
     		break
     	else:
     		logger.info("##################")
@@ -54,7 +59,8 @@ for csv_file in os.listdir(args.input):
 	    	csv = os.path.join(path, csv_file)
 	    	logger.info("csv input dir: {}".format(csv))
 	    	csv_folder_string = str(csv_file.strip(".csv"))
-	    	CSV_DIR = os.path.join(OUPUT_PATH, csv_folder_string)
+	    	# CSV_DIR = os.path.join(OUPUT_PATH, csv_folder_string)
+	    	CSV_DIR = os.path.join(MAIN_DIR, csv_folder_string)
 	    	if not os.path.exists(CSV_DIR):
 	    		os.makedirs(CSV_DIR)
 	    	logger.info("csv output dir: {}".format(CSV_DIR))
@@ -87,14 +93,14 @@ for csv_file in os.listdir(args.input):
 	    	lr_os_list.append(lr_os)
 
 	    	### random forest classifier ###
-	    	rfm, next_day_return_rf = globals()[csv_folder_string].random_forest()
-	    	rf_ss, rf_os = calculate_sign(y_test, next_day_return_rf)
-	    	rf_ss_list.append(rf_ss)
-	    	rf_os_list.append(rf_os)
+	    	# rfm, next_day_return_rf = globals()[csv_folder_string].random_forest()
+	    	# rf_ss, rf_os = calculate_sign(y_test, next_day_return_rf)
+	    	# rf_ss_list.append(rf_ss)
+	    	# rf_os_list.append(rf_os)
 
 	    	### append next day return to y_test ###
-	    	# single_df = building_df(y_test, next_day_return_lr, csv_folder_string)
-	    	single_df = building_df(y_test, next_day_return_rf, csv_folder_string)	    	
+	    	single_df = building_df(y_test, next_day_return_lr, csv_folder_string)
+	    	# single_df = building_df(y_test, next_day_return_rf, csv_folder_string)	    	
 	    	series_list.append(single_df)
 full_df = pd.concat(series_list)
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -110,7 +116,16 @@ for i, j in zip(range(len(bad_df_list)), range(len(bad_df_shape_list))):
 ############################################
 
 ###### RANKING ######
-long_short_rank(full_df)
+RANK_DIR = os.path.join(OUPUT_PATH, "Ranking")
+if not os.path.exists(RANK_DIR):
+	os.makedirs(RANK_DIR)
+TABLE_DIR = os.path.join(RANK_DIR, "table")
+if not os.path.exists(TABLE_DIR):
+	os.makedirs(TABLE_DIR)
 
 
+
+long_short_profit_nocost, long_part_next_df, short_part_next_df = long_short_rank(full_df, TABLE_DIR)
+lspncs = creating_ranking_csv(long_short_profit_nocost, long_part_next_df, short_part_next_df, TABLE_DIR)
+plot_cumulative(lspncs, RANK_DIR)
 
