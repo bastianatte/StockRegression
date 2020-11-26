@@ -29,5 +29,15 @@ print(dataset.head())
 dataset.index = dataset.index.tz_localize('UTC')
 dataset['Value']=dataset['Adj Close'].pct_change()
 returns = pd.Series(dataset['Value'], index=dataset.index)
-tearsheet = pf.tears.create_full_tear_sheet(returns)
+pf.tears.create_full_tear_sheet(returns)
 print(tearsheet)
+
+
+import empyrical as emp
+statistics_dict = {}
+statistics_dict['annual returns']=emp.annual_return(returns)
+statistics_dict['mean returns'] = returns.mean()
+statistics_dict['Standard dev p.a.']=emp.annual_volatility(returns)
+statistics_dict['Sharpe ratio']=emp.sharpe_ratio(returns)
+statistics_dict['Sortino Ratio']=emp.sortino_ratio(returns)
+statistics_dict['MaxDD']=emp.max_drawdown(returns)
