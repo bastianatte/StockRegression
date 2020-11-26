@@ -1,0 +1,21 @@
+{
+  "main": {
+    "bad_df_list": [],
+    "bad_df_shape_list": [],
+    "series_list": [],
+    "df_full_list": [],
+    "df_train_list": [],
+    "df_test_list": [],
+    "lr_ss_list": [],
+    "lr_os_list": [],
+    "rf_ss_list": [],
+    "rf_os_list": [],
+    "enable_plots_per_stocks": false, 
+    "exe_lr": false,
+    "exe_rf": true
+
+  },
+  "kmeans": {
+    "n_clusters": 7
+  }
+}
